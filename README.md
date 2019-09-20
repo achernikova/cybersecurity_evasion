@@ -2,6 +2,7 @@
 
 
 ## Project structure
+
 *	attack/
   * maximum.txt - minimum values of all features
   * minimum.txt - maximum values of all features
