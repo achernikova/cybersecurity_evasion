@@ -10,7 +10,6 @@
   * botnets.txt - ids of botnet traffic
   * success_rate.py - functionality for plotting success rate
   * plot_ROC_curves.py - functionality for plotting ROC curves
-  
 *	attack/
  * maximum.txt
   
