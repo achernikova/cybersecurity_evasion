@@ -6,6 +6,10 @@
 * attack/
   * maximum.txt 
   * minimum.txt
+  * model_whole_scenarios19
+  * neris_attack.py
+  * neris_model_data_utilities.py
+  * scaler_scenarios19
 * data/
   * features_stat_scenario2.csv - data from the second scenario
 * results/
