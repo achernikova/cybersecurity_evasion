@@ -10,8 +10,8 @@
   * botnets.txt - ids of botnet traffic
   * success_rate.py - functionality for plotting success rate
   * plot_ROC_curves.py - functionality for plotting ROC curves
-* data/
-  * features_stat_scenario2.csv - data from the second scenario
+* attack/
+  * maximum.txt 
   
   
   ## Data
