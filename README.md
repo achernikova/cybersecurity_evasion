@@ -12,12 +12,8 @@
   * plot_ROC_curves.py - functionality for plotting ROC curves
   
 *	attack/
-   *  maximum.txt - minimum values of all features
-   *  minimum.txt - maximum values of all features
-   *  model_whole_scenarios19 - trained model on 1 and 9 scenarios
-   *  neris_attack.py - attack class
-   *  neris_model_data_utilities.py - utilities functions for attack
-   *  scaler_scenarios19.pkl  - feature scaler
+ * maximum.txt
+  
   
   ## Data
   Data for testing the attack is under data/ folder, it corresponds to the second scenario.
