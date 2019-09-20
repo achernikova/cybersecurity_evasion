@@ -4,12 +4,12 @@
 ## Project structure
 
 *	attack/
-   * maximum.txt - minimum values of all features
-   * minimum.txt - maximum values of all features
-   * model_whole_scenarios19 - trained model on 1 and 9 scenarios
-   * neris_attack.py - attack class
-   * neris_model_data_utilities.py - utilities functions for attack
-   * scaler_scenarios19.pkl  - feature scaler
+   *  maximum.txt - minimum values of all features
+   *  minimum.txt - maximum values of all features
+   *  model_whole_scenarios19 - trained model on 1 and 9 scenarios
+   *  neris_attack.py - attack class
+   *  neris_model_data_utilities.py - utilities functions for attack
+   *  scaler_scenarios19.pkl  - feature scaler
 * data/
   * features_stat_scenario2.csv - data from the second scenario
 * results/
