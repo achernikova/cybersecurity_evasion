@@ -144,7 +144,6 @@ class Neris_attack:
         #code to prevent tensorflow from assigning random values to the model's weights(tensorflow - keras specificy)
         self.model.model.load_weights(self.MODEL_PATH)
         
-        #iterate over attacks
         for i in range(len(self.data.test_data)):
 
             print('----------------attack ', i)
@@ -159,7 +158,6 @@ class Neris_attack:
                 updated = []
                 borders = []
                 
-                #array for the adversary
                 adversary = np.copy(input_vector)
 
                 #number of added packets for both types of connections
@@ -168,20 +166,15 @@ class Neris_attack:
 
                 for j in range(self.NUM_ITERATIONS):
 
-                    #getting the raw features
                     raw_adversary = self.adv_scaler.inverse_transform(adversary)
-                    #calculating the gradient of attacker's optimization objective
                     res_grad = sess.run(gradient, feed_dict={attack: adversary})
-                    #calculating the absolute value
                     abs_grad = abs(res_grad)
-                    #gradient values that will be used to update features
                     abs_grad_update = np.copy(abs_grad)
 
                     abs_grad[:,borders] = MAX_BORDERS
                     arg_max = np.argmax(abs_grad)
                     borders.append(arg_max)
        
-                    #if the features can be modified
                     if arg_max in self.UPDATE:
                         if arg_max not in updated:
                             updated.append(arg_max)
@@ -199,9 +192,7 @@ class Neris_attack:
                                         else:
                                             delta_signs[l] = 1
 
-                            #getting port id, 21 - num features per port
                             port_id = int(np.floor((inds[self.BYTES_ID] - 3)/21))
-                            #raw features of input vector
                             input_vector_raw = self.adv_scaler.inverse_transform(input_vector)
 
                             current_scaled_adversary = np.copy(adversary)
@@ -210,14 +201,12 @@ class Neris_attack:
                             #update connections by the value from connection_ports(hyperparameter)
                             for k in [self.TCP_ID, self.UDP_ID]:   
                                 if k == self.TCP_ID and port_id not in self.PORTS_NO_TCP:                           
-                                    #if connections increases
                                     if delta_signs[k] < 0:
                                         new_conn_value = self.update_from_conn_up(current_raw_adversary, inds, delta_signs[k] * connections_ports[k - 9, int(port_id)], k)
                                         current_raw_adversary[0, inds[k]] = new_conn_value
                                         connections_ports[k - 9, int(port_id)] += 10
 
                                 elif k == self.UDP_ID and port_id not in self.PORTS_NO_UDP:
-                                    #if connections increases
                                     if delta_signs[k] < 0:
                                         new_conn_value = self.update_from_conn_up(current_raw_adversary, inds, delta_signs[k] * connections_ports[k - 9, int(port_id)], k)
                                         current_raw_adversary[0, inds[k]] = new_conn_value
@@ -235,7 +224,6 @@ class Neris_attack:
                             current_scaled_adversary = self.adv_scaler.transform(current_raw_adversary)
                             distance_tmp = np.linalg.norm(current_scaled_adversary - input_vector)
 
-                            #if we actually added something
                             if iter_conns_tcp + iter_conns_udp  > 0 and distance_tmp <= d_max:
 
                                 pbd_scaled_adversary = np.copy(current_scaled_adversary)
@@ -243,18 +231,14 @@ class Neris_attack:
 
                                 f_id = self.PACKETS_ID
 
-                                #calculate new gradient to see what it tells us for packets
                                 res_grad = sess.run(gradient, feed_dict={attack: pbd_scaled_adversary})
-                                #calculating the absolute value
                                 abs_grad = abs(res_grad)
-                                #get new delta                       
                                 delta_packets = abs_grad[0, inds[f_id]]
-                                #get delta sign
                                 if(res_grad[0, inds[f_id]] < 0):
                                     delta_sign = -1 
                                 else:
                                     delta_sign = 1
-                                #get new raw delta
+
                                 raw_delta = np.nan_to_num(get_raw_delta(pbd_scaled_adversary, delta_packets, delta_sign, self.adv_scaler, inds[f_id], shape))
                                 if inds[f_id] in self.integers: 
                                     if delta_sign < 0:
@@ -393,9 +377,7 @@ class Neris_attack:
                                                                         d_max, sess, gradient, attack)
 
                                             pbd_scaled_adversary = self.adv_scaler.transform(pbd_raw_adversary)
-                                            #get resulting distance
                                             distance_tmp = np.linalg.norm(pbd_scaled_adversary - input_vector)
-                                            #get resulting probability
                                             current_prob = sigmoid(self.model.model.predict(pbd_scaled_adversary))
                                             #perform binary search if we are outside L2 norm ball or probability is > 0.5
                                             if distance_tmp > d_max or current_prob > 0.5:
@@ -412,9 +394,7 @@ class Neris_attack:
                                                 total_packets_tcp[port_id] = iter_packets_tcp
 
                                         #Feasible update with binary search over delta for 'total packets sent' which is representative feauture
-                                        else:
-                                    
-                                            #If total increases
+                                        else:                                    
                                             if delta_sign < 0:
                                                 
                                                 #if we have TCP and UDP types of connections then we need to spread tha packets between connections                                                
@@ -464,7 +444,6 @@ class Neris_attack:
                                                                             iter_conns_tcp, iter_conns_udp,  iter_packets_udp, iter_packets_tcp, total_packets_udp[port_id], total_packets_tcp[port_id],
                                                                             d_max, sess, gradient, attack)
 
-                                            #if total decreases
                                             elif  pbd_raw_adversary[0, inds[f_id]] != input_vector_raw[0, inds[f_id]] and delta_sign > 0:
 
                                                 delta_to_increase = new_packets - input_vector_raw[0, inds[f_id]] 
@@ -504,9 +483,7 @@ class Neris_attack:
                                                                             iter_packets_udp, iter_packets_tcp,d_max, sess, gradient, attack)
 
                                             pbd_scaled_adversary = self.adv_scaler.transform(pbd_raw_adversary)
-                                            #get distance                               
                                             distance_tmp = np.linalg.norm(pbd_scaled_adversary - input_vector)
-                                            #get probability
                                             current_prob = sigmoid(self.model.model.predict(pbd_scaled_adversary))
                                             #perform binary search if we are outside L2 norma ball pt resulting probability is > 0.5
                                             if distance_tmp > d_max or current_prob > 0.5:
@@ -567,9 +544,6 @@ class Neris_attack:
 
     def update_from_conn_up(self, adversary, inds, raw_delta, conn_id):
 
-        #in indicies we have features in the following order:
-        #Total bytes - Min bytes - Max bytes - Total duration - Min duration - Max duration - Total packets - Min packets - Max packets - tcp - udp - icmp
-
         conn_f =  adversary[0, inds[conn_id]]
         max_conn_f = self.max_features[inds[conn_id]]
         new_conn_f = conn_f
@@ -582,9 +556,6 @@ class Neris_attack:
         return new_conn_f
 
     def update_from_conn_down(self, adversary, input_vector, inds, raw_delta, conn_id):
-
-        #in indicies we have features in the following order:
-        #Total bytes - Min bytes - Max bytes - Total duration - Min duration - Max duration - Total packets - Min packets - Max packets - tcp - udp - icmp
 
         conn_f = adversary[0, inds[conn_id]]
         new_conn_f = conn_f
@@ -604,22 +575,17 @@ class Neris_attack:
                     iter_conns_tcp, iter_conns_udp, iter_packets_udp, iter_packets_tcp, total_packets_udp, total_packets_tcp, d_max, sess, gradient, attack):
 
         f_id = self.BYTES_ID
-        #take gradient
         res_grad = sess.run(gradient, feed_dict={attack: pbd_scaled_adversary})
-        #calculating the absolute value of gradient
         abs_grad = abs(res_grad)
         delta_bytes = abs_grad[0, inds[f_id]]
 
-        #get delta sign
         if(res_grad[0, inds[f_id]] < 0):
             delta_sign = -1 
         else:
             delta_sign = 1
 
-        #get new raw delta
         raw_delta = np.nan_to_num(get_raw_delta(pbd_scaled_adversary, delta_bytes, delta_sign, self.adv_scaler, inds[f_id], shape))
 
-        #round if integer
         if inds[f_id] in self.integers: 
             if delta_sign < 0:
                 raw_delta = math.ceil(raw_delta)
@@ -644,35 +610,40 @@ class Neris_attack:
         if total_bytes > total_packets_tcp * self.MAX_BYTES_PACKET_TCP + total_packets_udp * self.MAX_BYTES_PACKET_UDP:
             delta_bytes  = (total_packets_tcp * self.MAX_BYTES_PACKET_TCP + total_packets_udp * self.MAX_BYTES_PACKET_UDP ) * -1
 
-            pbd_raw_adversary[0, inds[f_id]], pbd_raw_adversary[0, inds[f_id + 1]], pbd_raw_adversary[0, inds[f_id+ 2]] = self.update_from_total_up(input_vector_raw, input_vector_raw, inds, delta_bytes, f_id, total_conns_udp, total_conns_tcp,
+            pbd_raw_adversary[0, inds[f_id]], pbd_raw_adversary[0, inds[f_id + 1]], pbd_raw_adversary[0, inds[f_id+ 2]] = self.update_from_total_up(input_vector_raw,
+                                                                                input_vector_raw, inds, delta_bytes, f_id, total_conns_udp, total_conns_tcp,
                                                                                 total_packets_udp, total_packets_tcp)
 
             pbd_scaled_adversary = self.adv_scaler.transform(pbd_raw_adversary)
 
-            pbd_raw_adversary = self.update_duration( pbd_raw_adversary, pbd_scaled_adversary, input_vector_raw, input_vector, shape, inds, iter_conns_tcp, iter_conns_udp,  iter_packets_udp, iter_packets_tcp,
+            pbd_raw_adversary = self.update_duration( pbd_raw_adversary, pbd_scaled_adversary, input_vector_raw, input_vector, shape, inds, iter_conns_tcp,
+                                                     iter_conns_udp,  iter_packets_udp, iter_packets_tcp,
                                                     total_packets_udp, total_packets_tcp, sess, gradient, attack, d_max)
         #lower boundary
         elif total_bytes < total_packets * self.MIN_BYTES_PACKET_TCP:
             delta_bytes = total_packets * self.MIN_BYTES_PACKET_TCP * -1
 
-            pbd_raw_adversary[0, inds[f_id]], pbd_raw_adversary[0, inds[f_id + 1]], pbd_raw_adversary[0, inds[f_id+ 2]] = self.update_from_total_up(input_vector_raw, input_vector_raw, inds, delta_bytes,
+            pbd_raw_adversary[0, inds[f_id]], pbd_raw_adversary[0, inds[f_id + 1]], pbd_raw_adversary[0, inds[f_id+ 2]] = self.update_from_total_up(input_vector_raw, 
+                                                                                input_vector_raw, inds, delta_bytes,
                                                                                  f_id,total_conns_udp,  total_conns_tcp,total_packets_udp, total_packets_tcp)
         
             pbd_scaled_adversary = self.adv_scaler.transform(pbd_raw_adversary)
 
             pbd_raw_adversary = self.update_duration(pbd_raw_adversary, pbd_scaled_adversary,input_vector_raw, input_vector, 
-                                                 shape, inds, iter_conns_tcp, iter_conns_udp,
+                                                    shape, inds, iter_conns_tcp, iter_conns_udp,
                                                     iter_packets_tcp, iter_packets_tcp,total_packets_udp, total_packets_tcp, sess, gradient, attack, d_max)
         #feasible update
         else:
             if delta_sign < 0:
         
-                pbd_raw_adversary[0, inds[f_id]], pbd_raw_adversary[0, inds[f_id + 1]], pbd_raw_adversary[0, inds[f_id+ 2]]= self.update_from_total_up(pbd_raw_adversary, input_vector_raw, inds, delta_bytes * delta_sign,
+                pbd_raw_adversary[0, inds[f_id]], pbd_raw_adversary[0, inds[f_id + 1]], pbd_raw_adversary[0, inds[f_id+ 2]]= self.update_from_total_up(pbd_raw_adversary,
+                                                                                     input_vector_raw, inds, delta_bytes * delta_sign,
                                                                                     f_id, total_conns_udp, total_conns_tcp, total_packets_udp, total_packets_tcp)
        
             elif  pbd_raw_adversary[0, inds[f_id]] != input_vector_raw[0, inds[f_id]] and delta_sign > 0:
 
-                pbd_raw_adversary[0, inds[f_id]], pbd_raw_adversary[0, inds[f_id + 1]], pbd_raw_adversary[0, inds[f_id+ 2]] = self.update_from_total_down(pbd_raw_adversary, input_vector_raw, inds, delta_bytes * delta_sign,
+                pbd_raw_adversary[0, inds[f_id]], pbd_raw_adversary[0, inds[f_id + 1]], pbd_raw_adversary[0, inds[f_id+ 2]] = self.update_from_total_down(pbd_raw_adversary,
+                                                                                         input_vector_raw, inds, delta_bytes * delta_sign,
                                                                                        f_id, total_conns_udp, total_conns_tcp, total_packets_udp, total_packets_tcp)
    
             pbd_scaled_adversary = self.adv_scaler.transform(pbd_raw_adversary)
@@ -688,17 +659,13 @@ class Neris_attack:
        
         res_grad = sess.run(gradient, feed_dict={attack: pbd_scaled_adversary})
         f_id = self.DURATION_ID
-        #calculating the absolute value
         abs_grad = abs(res_grad)
         delta_duration = abs_grad[0, inds[f_id]]
 
-        #get delta sign
         if(res_grad[0, inds[f_id]] < 0):
             delta_sign = -1 
         else:
             delta_sign = 1
-
-        #get new raw delta
         raw_delta = np.nan_to_num(get_raw_delta(pbd_scaled_adversary, delta_duration, delta_sign, self.adv_scaler, inds[f_id], shape))
 
         if inds[f_id] in self.integers: 
@@ -727,8 +694,9 @@ class Neris_attack:
             delta_duration = total_packets * self.MIN_DURATION_PACKET_TCP * -1
 
             #udpate dependencies        
-            pbd_raw_adversary[0, inds[f_id]], pbd_raw_adversary[0, inds[f_id + 1]], pbd_raw_adversary[0, inds[f_id+ 2]] = self.update_from_total_up(input_raw_vector, input_raw_vector,
-                                                                                 inds, delta_duration, f_id, total_conns_udp,  total_conns_tcp, total_packets_udp, total_packets_tcp)
+            pbd_raw_adversary[0, inds[f_id]], pbd_raw_adversary[0, inds[f_id + 1]], pbd_raw_adversary[0, inds[f_id+ 2]] = self.update_from_total_up(input_raw_vector,
+                                                                                 input_raw_vector, inds, delta_duration, f_id, total_conns_udp,  total_conns_tcp,
+                                                                                  total_packets_udp, total_packets_tcp)
         
         
         #upper boundary
@@ -736,19 +704,17 @@ class Neris_attack:
             delta_duration = (total_packets_tcp * self.MAX_DURATION_PACKET_TCP + total_packets_udp * self.MAX_DURATION_PACKET_UDP) * -1
 
             #udpate dependencies
-            pbd_raw_adversary[0, inds[f_id]], pbd_raw_adversary[0, inds[f_id + 1]], pbd_raw_adversary[0, inds[f_id+ 2]]  = self.update_from_total_up(input_raw_vector, input_raw_vector,
-                                                                             inds, delta_duration, f_id,total_conns_udp,  total_conns_tcp, total_packets_udp, total_packets_tcp)
+            pbd_raw_adversary[0, inds[f_id]], pbd_raw_adversary[0, inds[f_id + 1]], pbd_raw_adversary[0, inds[f_id+ 2]]  = self.update_from_total_up(input_raw_vector, 
+                                                                            input_raw_vector, inds, delta_duration, f_id,total_conns_udp,  total_conns_tcp,
+                                                                             total_packets_udp, total_packets_tcp)
         #feasible update
         else:
-            #if total increases
             if delta_sign < 0:
-                #udpate dependencies
                 pbd_raw_adversary[0, inds[f_id]], pbd_raw_adversary[0, inds[f_id + 1]], pbd_raw_adversary[0, inds[f_id+ 2]]  = self.update_from_total_up(pbd_raw_adversary, input_raw_vector, inds, delta_duration * delta_sign,
                                                                                     f_id,total_conns_udp,  total_conns_tcp, total_packets_udp, total_packets_tcp)
                 
-            #if total decreases
+        
             elif  pbd_raw_adversary[0, inds[f_id]] != input_raw_vector[0, inds[f_id]] and delta_sign > 0:
-                #update dependencies
                 pbd_raw_adversary[0, inds[f_id]], pbd_raw_adversary[0, inds[f_id + 1]], pbd_raw_adversary[0, inds[f_id+ 2]] = self.update_from_total_down(pbd_raw_adversary, input_raw_vector, inds, delta_duration * delta_sign,
                                                                                       f_id, total_conns_udp,  total_conns_tcp, total_packets_udp, total_packets_tcp)
 
@@ -756,22 +722,16 @@ class Neris_attack:
 
     def update_from_total_up(self, adversary, input_raw, inds, raw_delta, total_id, total_conns_udp, total_conns_tcp, total_packets_udp,  total_packets_tcp):
 
-        #in indicies we have features in the following order:
-        #Total bytes - Min bytes - Max bytes - Total duration - Min duration - Max duration - Total packets - Min packets - Max packets - tcp - udp - icmp
-
         np.random.seed(1)
         
-        #get total
         total_f = adversary[0, inds[total_id]]
         max_total_f = self.max_features[inds[total_id]]
         new_total_f = total_f
 
-        #get max 
         max_f = input_raw[0, inds[total_id + 2]]
         max_max_f = self.max_features[inds[total_id + 2]]
         new_max_f = max_f
 
-        #get min
         min_f = input_raw[0, inds[total_id + 1]]
         if min_f < 0:
             min_f = 0
@@ -784,22 +744,18 @@ class Neris_attack:
         ###########################################Min/Max
 
         #get total number of udp and tcp connections OVERALL
-        
         total_conns_tcp = round(total_conns_tcp)
         total_conns_udp = round(total_conns_udp)
 
         #get total amount of feature added OVERALL
         total_added = new_total_f - input_raw[0, inds[total_id]]
 
-        ##########################################
         if total_id == self.PACKETS_ID:
             new_max_f, new_min_f = self.update_max_min_packets(total_added, total_conns_tcp, total_conns_udp, total_packets_tcp, total_packets_udp, new_max_f, new_min_f)
-        
-        #############################################       
+           
         if total_id == self.BYTES_ID:
             new_max_f, new_min_f = self.update_max_min_bytes(total_added, total_conns_tcp, total_conns_udp, total_packets_tcp, total_packets_udp,new_max_f, new_min_f, raw_delta)
 
-        #########################################################################
         if total_id == self.DURATION_ID:
             new_max_f, new_min_f = self.update_max_min_duration(total_added, total_conns_tcp, total_conns_udp, total_packets_tcp, total_packets_udp, new_max_f, new_min_f, raw_delta)
 
@@ -807,24 +763,16 @@ class Neris_attack:
 
     def update_from_total_down(self, adversary_raw, input_raw, inds, raw_delta, total_id, total_conns_udp, total_conns_tcp, total_packets_udp, total_packets_tcp):
 
-        #in indicies we have features in the following order:
-        #Total bytes - Min bytes - Max bytes - Total duration - Min duration - Max duration - Total packets - Min packets - Max packets - tcp - udp - icmp
-
         np.random.seed(1)
 
-        #input total
         input_total = input_raw[0, inds[total_id]]
-
-        #get total
         total_f = adversary_raw[0, inds[total_id]]
         new_total_f = total_f
 
-        #get max 
         max_f = input_raw[0, inds[total_id + 2]]
         max_max_f = self.max_features[inds[total_id + 2]]
         new_max_f = max_f
 
-        #get min
         min_f = input_raw[0, inds[total_id + 1]]
         if min_f < 0:
             min_f = 0
@@ -835,17 +783,17 @@ class Neris_attack:
         new_total_f = total_f - raw_delta
 
         if total_id == self.PACKETS_ID:
-            # check if greater than initial + 20 bytes(min bytes per packet)- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!UPDATE AS PARAM
+            # check if greater than initial + 20 bytes(min bytes per packet)
             if new_total_f < input_total + 2:
                 new_total_f = input_total + 2
 
         elif total_id == self.BYTES_ID:
-            # check if greater than initial + 20 bytes(min bytes per packet)- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!UPDATE AS PARAM
+            # check if greater than initial + 20 bytes(min bytes per packet)
             if new_total_f < input_total + 20:
                 new_total_f = input_total + 20
 
         elif total_id == self.DURATION_ID:
-            # check if greater than initial + min duration per packet - !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!UPDATE AS PARAM
+            # check if greater than initial + min duration per packet 
             if new_total_f < input_total + 0.0001:
                 new_total_f = input_total + 0.0001
 
@@ -856,16 +804,12 @@ class Neris_attack:
         #get total amount of feature added
         total_added = new_total_f - input_raw[0, inds[total_id]]
 
-        ###################################################
         if total_id == self.PACKETS_ID:
             new_max_f, new_min_f = self.update_max_min_packets(total_added, total_conns_tcp, total_conns_udp, total_packets_tcp, total_packets_udp, new_max_f, new_min_f)
-
-        
-        #############################################       
+       
         if total_id == self.BYTES_ID:
             new_max_f, new_min_f = self.update_max_min_bytes(total_added, total_conns_tcp, total_conns_udp, total_packets_tcp, total_packets_udp, new_max_f, new_min_f, raw_delta)
 
-        #########################################################################33
         if total_id == self.DURATION_ID:
             new_max_f, new_min_f = self.update_max_min_duration(total_added, total_conns_tcp, total_conns_udp, total_packets_tcp, total_packets_udp,new_max_f, new_min_f, raw_delta)
 
