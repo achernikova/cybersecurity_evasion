@@ -16,8 +16,13 @@
   * botnets.txt - ids of botnet traffic
   * success_rate.py - functionality for plotting success rate
   * plot_ROC_curves.py - functionality for plotting ROC curves
+  
+* training/
+  * train.py - training model on scenarios 1, 9 (data for scenario 1: ; data for scenario 9: )
 
   
+  ## Training
+  For training the model ruh train.py file, it will save the weight of trained model on scenarios 1 and 9 to 'model_whole_scenarios19' file.  
   
   ## Data
   Data for testing the attack is under data/ folder, it corresponds to the second scenario.
