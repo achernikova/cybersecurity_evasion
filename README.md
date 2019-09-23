@@ -18,7 +18,7 @@
   * plot_ROC_curves.py - functionality for plotting ROC curves
   
 * training/
-  * train.py - training model on scenarios 1, 9 (data for scenario 1: ; data for scenario 9: )
+  * train.py - training model on scenarios 1, 9 (data for scenario 1:https://drive.google.com/open?id=1ZHGihxd2EJ9NuKbeWkqfoL3QfCEktV_D ; data for scenario 9: https://drive.google.com/open?id=14dU9HIDSNS9pcf-3_bnXbfdtzstWiS83 )
 
   
   ## Training
