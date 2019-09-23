@@ -11,7 +11,6 @@ success = np.zeros(NUM_DISTANCES)
 distances = np.zeros(NUM_DISTANCES)
 
 # get malicious uindicies
-
 inds = open('botnets.txt', 'r')
 
 botnets = []
@@ -20,9 +19,7 @@ for line in inds:
     botnets = line.split(',')
 
 botnets.remove('')
-print(len(botnets))
 
-#iterate over distances
 for  i in range(NUM_DISTANCES):
 
     distances[i] = (i + 1) * 2
@@ -30,14 +27,9 @@ for  i in range(NUM_DISTANCES):
 
     for k in botnets:
 
-        #prob = open('prob_distance_20_adv#' + k + '.txt', 'r')
-
         prob = open('prob_distance_' + str(int(distances[i]))+ '_adv#' + k + '.txt', 'r')
-        #print(prob)
 
         for line in prob:
-
-            #print(line)
 
             if float(line) < 0.5:
                 success_distance += 1
@@ -45,21 +37,13 @@ for  i in range(NUM_DISTANCES):
         success[i] = success_distance
 
 success = (success + NUM_BENIGN_BY_MODEL)/ NUM_BOTNETS
-print(success)
-
-
 
 plt.xlabel("Maximum perturbation", fontsize = 18)
 plt.ylabel("Attack success rate", fontsize = 18)
-
 plt.plot(distances, success,label='Neris Attack',linewidth = 2.5, markersize = 6,marker='o')
-
 plt.legend(loc = 0,fontsize = 16)
 ax = plt.gca()
 plt.setp(ax.get_xticklabels(), fontsize=18)
 plt.setp(ax.get_yticklabels(), fontsize=18)
 plt.tight_layout()
-
-
-
 plt.savefig('success_rate.png', dpi = 1200)
